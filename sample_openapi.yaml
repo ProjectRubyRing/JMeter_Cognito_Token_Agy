@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: Sample E-Commerce & User Management API
+  description: OpenAPI 3.0.3 specification for testing JMeter 5.6.3 scenario generation with AWS Cognito authentication.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local Development / Mock Server
+paths:
+  /api/v1/users/{userId}:
+    get:
+      summary: Get user details by ID
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique user identifier
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9999
+        - name: includeProfile
+          in: query
+          required: false
+          description: Whether to include extended user profile
+          schema:
+            type: boolean
+            default: true
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, xml]
+            default: json
+      responses:
+        '200':
+          description: User profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized - Invalid or expired Cognito token
+        '404':
+          description: User not found
+
+  /api/v1/users:
+    post:
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request body
+
+  /api/v1/products:
+    get:
+      summary: List products with query filtering
+      operationId: listProducts
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            example: electronics
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: inStock
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: A list of products
+
+  /api/v1/products/{productId}:
+    put:
+      summary: Update product information
+      operationId: updateProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateRequest'
+      responses:
+        '200':
+          description: Product updated
+
+    delete:
+      summary: Delete a product
+      operationId: deleteProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Product deleted successfully
+
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - email
+        - age
+      properties:
+        username:
+          type: string
+          example: test_perf_user
+        email:
+          type: string
+          format: email
+          example: test_perf@example.com
+        age:
+          type: integer
+          minimum: 18
+          maximum: 80
+        isActive:
+          type: boolean
+          default: true
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [USER, ADMIN, AUDITOR]
+        address:
+          type: object
+          properties:
+            postalCode:
+              type: string
+              example: "100-0001"
+            city:
+              type: string
+              example: "Tokyo"
+            country:
+              type: string
+              default: "JP"
+
+    ProductUpdateRequest:
+      type: object
+      required:
+        - productName
+        - unitPrice
+      properties:
+        productName:
+          type: string
+          example: "High Performance Cloud Router"
+        unitPrice:
+          type: number
+          format: double
+          minimum: 10.0
+          maximum: 5000.0
+        tags:
+          type: array
+          items:
+            type: string
+        available:
+          type: boolean
+
+    UserResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
